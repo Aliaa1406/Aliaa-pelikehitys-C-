@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raylib_testi", "Raylib_testi.csproj", "{A9576337-8238-4F61-8EA6-677D664BE8BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A9576337-8238-4F61-8EA6-677D664BE8BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9576337-8238-4F61-8EA6-677D664BE8BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9576337-8238-4F61-8EA6-677D664BE8BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9576337-8238-4F61-8EA6-677D664BE8BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {076167A1-6A91-47CC-AA7C-1C69E9F4CC8B}
+	EndGlobalSection
+EndGlobal
