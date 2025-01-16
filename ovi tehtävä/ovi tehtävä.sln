@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ovi tehtävä", "ovi tehtävä.csproj", "{C9B6CB76-3C37-49FA-9D35-DEE4E6F86020}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9B6CB76-3C37-49FA-9D35-DEE4E6F86020}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9B6CB76-3C37-49FA-9D35-DEE4E6F86020}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9B6CB76-3C37-49FA-9D35-DEE4E6F86020}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9B6CB76-3C37-49FA-9D35-DEE4E6F86020}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CC99265D-ABD3-4CC3-BE51-E1483B72A423}
+	EndGlobalSection
+EndGlobal
