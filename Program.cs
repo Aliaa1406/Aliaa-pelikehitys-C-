@@ -1,75 +1,68 @@
-﻿using System.Numerics;
-using Raylib_cs;
+﻿using Raylib_cs;
+using DVD1;
+using System.Security.Cryptography.X509Certificates;
+using System.Numerics;
 
-namespace Raylib_testi;
 
-internal class Program
+namespace DVD1
 {
-    static void Main(string[] args)
+    internal class Program
     {
-        int width = 600;
-        int height = 400;
-        Vector2 A = new Vector2(width / 2, 0);
-        Vector2 B = new Vector2(0, height / 2);
-        Vector2 C = new Vector2(width, height * 3 / 4);
-
-        Vector2 Amove = new Vector2(1, 1);
-        Vector2 Bmove = new Vector2(1, -1);
-        Vector2 Cmove = new Vector2(-1, 1);
-
-
-        float speed = 100f;
-
-
-
-
-        //Console.WriteLine("Hello, World!");
-        Raylib.InitWindow(width, height, "Raylib_testi");
-        while (Raylib.WindowShouldClose() == false)
+        static void Main(string[] args)
         {
-            Raylib.BeginDrawing();
-            Raylib.ClearBackground(Color.Black);
+            int Screenwidth = 100;
+            int Screenheight = 100;
 
-            //line draw
-            Raylib.DrawLineV(A, B, Color.Green);
-            Raylib.DrawLineV(B, C, Color.Red);
-            Raylib.DrawLineV(C, A, Color.Yellow);
+            Vector2 A = new Vector2(Screenwidth / 2, 0);
+            Vector2 B = new Vector2(0, Screenheight / 2);
+            
 
-            Vector2 Move = Amove * speed * Raylib.GetFrameTime();
-            A = A + Move;
-            Vector2 Move1 = Bmove * speed * Raylib.GetFrameTime();
-            B = B + Move1;
-            Vector2 Move2 = Cmove * speed * Raylib.GetFrameTime();
-            C = C + Move2;
+            Vector2 Amove = new Vector2(1, 0);
+            Vector2 Bmove = new Vector2(0, -1);
 
-            if (A.X <= 0 || A.X >= width)
-            { Amove.X = Amove.X * -1; }
 
-            if (A.Y <= 0 || A.Y >= height)
+
+             float Speed = 100.0f;
+
+           
+           
+
+
+
+           // Color linecolor = Color.White;
+           // List<Color>
+
+            Raylib.InitWindow(Screenwidth, Screenheight, "Raylib_texti");
+            while (Raylib.WindowShouldClose() == false) 
             {
-                Amove.Y = Amove.Y *= -1;
+                Raylib.BeginDrawing();
+                Raylib.ClearBackground(Color.Black);
+
+               Vector2 tex_size = Raylib.MeasureTextEx(Raylib.GetFontDefault(), "DVD", 14, 2);
+                Raylib.DrawText("DVD", (int)A.X, (int)A.Y, 14, Color.Yellow);
+                Vector2 Move = Amove * Speed * Raylib.GetFrameTime();
+                A = A + Move;
+
+                if (A.X < 0 || A.X > Screenwidth)
+                { 
+                    Amove.X = Amove.X * -1;
+                   
+                }
+                if (A.Y <= 0 || A.Y >= Screenheight)
+                { Amove.Y = A.Y * -1; }
+                if (B.X <= 0 || B.X >= Screenwidth)
+                { Bmove.X = Bmove.X * -1; }
+                if (B.Y <= 0 || B.Y >= Screenheight)
+                { Bmove.Y = Bmove.Y * -1; }
+
+                Raylib.EndDrawing();
+
             }
-
-            if (B.X <= 0 || B.X >= width)
-            { Bmove.X= Bmove.X * -1; }
-            if (B.Y <= 0 || B.Y >= height)
-            { Bmove.Y = Bmove.Y *= -1; }
-
-            if (C.X <= 0 || C.X >= width) { Cmove.X= Cmove.X *= -1; }
-            if (C.Y <= 0 || C.Y >= height) { Cmove.Y =Cmove.Y *= -1; }
-
-
-
-
-
-            // Raylib.DrawText("HELLO", 100, 100, 32, Color.White);
-            Raylib.EndDrawing();
-            //program the reast of the game :D
-
+            Raylib.CloseWindow();
+            
+         
+            
+            
         }
-
-
-
-        Raylib.CloseWindow();
     }
 }
