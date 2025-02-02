@@ -20,9 +20,9 @@
 
     internal class Nuoli
     {
-        sbyte pituusCm;
-        SulkeMateriaali sulka;
-        KärkiMateriaali Kärki;
+        public sbyte pituusCm;
+        public  SulkeMateriaali sulka;
+        public KärkiMateriaali Kärki;
 
         // tee konstruktori
         public Nuoli(KärkiMateriaali kärki, SulkeMateriaali sulke, float pituusCm)
