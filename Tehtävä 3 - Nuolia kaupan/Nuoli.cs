@@ -20,9 +20,9 @@
 
     internal class Nuoli
     {
-        public sbyte pituusCm;
-        public  SulkeMateriaali sulka;
-        public KärkiMateriaali Kärki;
+        private  sbyte pituusCm;
+        private   SulkeMateriaali sulka;
+        private  KärkiMateriaali Kärki;
 
         // tee konstruktori
         public Nuoli(KärkiMateriaali kärki, SulkeMateriaali sulke, float pituusCm)
@@ -54,7 +54,18 @@
 
             return hinta;
         }
-
+        public static Nuoli LuoEliittiNuoli()
+        {
+            return new Nuoli(KärkiMateriaali.Timantti, SulkeMateriaali.Kanansulka, 100);
+        }
+        public static Nuoli LuoAloittelijanuoli()
+        {
+            return new Nuoli(KärkiMateriaali.Puu, SulkeMateriaali.Kanansulka, 70); 
+        }
+        public static Nuoli LuoPerusnuoli()
+        {
+            return new Nuoli(KärkiMateriaali.Teräs, SulkeMateriaali.Kanansulka, 85); 
+        }
     }
 
 }
