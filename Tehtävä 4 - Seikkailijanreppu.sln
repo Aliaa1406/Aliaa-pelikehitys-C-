@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tehtävä 4 - Seikkailijanreppu", "Tehtävä 4 - Seikkailijanreppu.csproj", "{399C5E71-1D97-4A95-8399-0F9C6F5D240C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{399C5E71-1D97-4A95-8399-0F9C6F5D240C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{399C5E71-1D97-4A95-8399-0F9C6F5D240C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{399C5E71-1D97-4A95-8399-0F9C6F5D240C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{399C5E71-1D97-4A95-8399-0F9C6F5D240C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F26E2F73-8595-4FC6-A146-C04B7DFDFB19}
+	EndGlobalSection
+EndGlobal
