@@ -1,0 +1,6 @@
+{
+	"name": "Goblin warrior",
+	"hitpoints": 40,
+	"stamina": 10,
+	"attack_damage": 4
+}

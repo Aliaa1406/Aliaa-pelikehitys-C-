@@ -1,0 +1,7 @@
+{
+	"name": "Goblin Mage",
+	"hitpoints": 10,
+	"stamina": 40,
+	"attack_damage": 10,
+	"mana": 100
+}
