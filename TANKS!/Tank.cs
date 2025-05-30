@@ -10,7 +10,7 @@ public class Tank
     public Vector2 PreviousPosition;
     public Color Color;
     public Bullet Bullet;
-    public int Score { get; private set; } = 0;
+    public int Score = 0;
 
     private Vector2 tankSize = new Vector2(40, 40);
     private Vector2 turretSize = new Vector2(16, 16);

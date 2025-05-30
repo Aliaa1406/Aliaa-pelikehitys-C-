@@ -53,8 +53,16 @@ class Program
                     player2.Bullet.Deactivate();
             }
 
-            // Pidä tankit ruudun sisällä
-            player1.ClampPosition(screenWidth, screenHeight);
+            // player tankin törmäys ech other 
+            if (Raylib.CheckCollisionRecs(player1.GetBounds(), player2.GetBounds()))
+                    player1.RevertLastMove();
+
+                if (Raylib.CheckCollisionRecs(player2.GetBounds(), player1.GetBounds() ))
+                    player2.RevertLastMove();
+           
+
+                // Pidä tankit ruudun sisällä
+                player1.ClampPosition(screenWidth, screenHeight);
             player2.ClampPosition(screenWidth, screenHeight);
 
             // Tarkista ammusten osumat tankkeihin
