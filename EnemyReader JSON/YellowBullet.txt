@@ -1,0 +1,6 @@
+{
+"name" : "Yallow Bullet",
+"damage": 10,
+"color" : "Yallow",
+"explosionSize": "15"
+}

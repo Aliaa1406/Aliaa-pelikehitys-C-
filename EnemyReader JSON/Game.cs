@@ -1,7 +1,10 @@
 ﻿
 using EnemyReader;
+using Newtonsoft.Json;
 using Raylib_cs;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
+
 
 namespace EnemyReader_JSON
 {
@@ -17,6 +20,7 @@ namespace EnemyReader_JSON
         private float redAngle = 45.0f;
         private float bluePower = 10.0f;
         private float blueAngle = 45.0f;
+        private int choose;
 
         // Game elements
         private Terrain terrain;
@@ -25,6 +29,7 @@ namespace EnemyReader_JSON
         private List<Bomb> bombs; 
         private List<Enemy> enemies;
         private List<Explosion> explosions;
+        private List<Bomb> bombTypes;
 
         public Game(int width, int height)
         {
@@ -34,6 +39,13 @@ namespace EnemyReader_JSON
             enemies = new List<Enemy>();
             bombs = new List<Bomb>(); 
             explosions = new List<Explosion>();
+            bombTypes = new List<Bomb>();
+        }
+
+        private Bomb choise()
+        {
+          choose =  Math.Clamp(choose,0 , bombTypes.Count-1);
+            return bombTypes[choose];
         }
 
         public void Initialize()
@@ -42,7 +54,39 @@ namespace EnemyReader_JSON
 
             redTank = new Artillery(new Vector2(150, terrain.GetHeightAt(150) - 10), Color.Red, 20, 10, 20, 3);
             blueTank = new Artillery(new Vector2(650, terrain.GetHeightAt(650) - 10), Color.Blue, 20, 10, 20, 3);
+            Bomb loadit = new Bomb();
+            loadit = LoadBomb("RedBullet.txt");
+            bombTypes.Add(loadit);
+            loadit = LoadBomb("YellowBullet.txt");
+            bombTypes.Add((loadit));
         }
+
+
+        public Bomb LoadBomb( string filename)
+        {
+            if (File.Exists(filename) == false)
+            {
+                Console.WriteLine($"Could not read file {filename}");
+            }
+            else
+            {
+                string text = File.ReadAllText(filename);
+
+                try
+                {
+                    return  JsonConvert.DeserializeObject<Bomb>(text);
+                }
+                catch (JsonReaderException exp)
+                {
+                    Console.WriteLine($"Error in file {filename} at {exp.LineNumber}: {exp.LinePosition}");
+                    Console.WriteLine(exp.Message);
+                }
+            }
+            return null;
+        }
+
+
+
 
         private void SpawnEnemies(int count)
         {
@@ -151,12 +195,18 @@ namespace EnemyReader_JSON
             }
         }
 
+        
         private void HandleInput()
         {
             if (Raylib.IsKeyDown(KeyboardKey.W)) redAngle += 1.0f;
             if (Raylib.IsKeyDown(KeyboardKey.S)) redAngle -= 1.0f;
             if (Raylib.IsKeyDown(KeyboardKey.D)) redPower += 0.2f;
             if (Raylib.IsKeyDown(KeyboardKey.A)) redPower -= 0.2f;
+
+            if (Raylib.IsKeyPressed(KeyboardKey.Q)) choose++;
+            if (Raylib.IsKeyPressed(KeyboardKey.E)) choose--;
+
+
 
             redAngle = Math.Clamp(redAngle, 0, 90);
             redPower = Math.Clamp(redPower, 5, 30);
@@ -178,6 +228,16 @@ namespace EnemyReader_JSON
             {
                 FireBomb(blueTank, blueAngle, bluePower, false);
             }
+
+            
+        }
+
+        public Color StringToColor(string color)
+        {
+            if(color  == "Red") return Color.Red;
+            if (color == "Yallow") return Color.Yellow; 
+
+            return Color.White;
         }
 
         private void FireBomb(Artillery tank, float angle, float power, bool isRedFiring)
@@ -204,7 +264,10 @@ namespace EnemyReader_JSON
             Vector2 bombPosition = new Vector2(barrelEndX, barrelEndY);
             Vector2 bombVelocity = new Vector2(velocityX, velocityY);
 
-            Bomb newBomb = new Bomb(isRedFiring); 
+            Bomb newBomb = new Bomb(isRedFiring);
+            newBomb = choise();
+            newBomb.FiredByRed = isRedFiring;
+            newBomb.ScreenColor = StringToColor(newBomb.color);
             newBomb.Fire(bombPosition, bombVelocity);
             bombs.Add(newBomb); // Updated
         }
@@ -325,11 +388,13 @@ namespace EnemyReader_JSON
             Raylib.DrawText($"Red score: {redScore}", 20, 20, 20, Color.Red);
             Raylib.DrawText($"Blue score: {blueScore}", screenWidth - 200, 20, 20, Color.Blue);
             Raylib.DrawText($"Active bombs: {bombs.Count}", screenWidth / 2 - 80, 20, 20, Color.Yellow);
-            Raylib.DrawText($"Red Power: {redPower:F1}", 20, 50, 16, Color.Red);
-            Raylib.DrawText($"Red Angle: {redAngle:F0}°", 20, 70, 16, Color.Red);
-            Raylib.DrawText($"Blue Power: {bluePower:F1}", screenWidth - 200, 50, 16, Color.Blue);
-            Raylib.DrawText($"Blue Angle: {blueAngle:F0}°", screenWidth - 200, 70, 16, Color.Blue);
-            Raylib.DrawText($"Enemies left: {enemies.Count}", screenWidth / 2 - 70, 50, 16, Color.Green);
+            
+
+            for(int i = 0; i <bombTypes.Count; i++) 
+            { 
+
+            Raylib.DrawText($"RedBullet : Name:{bombTypes[i].name}, {bombTypes [i].damage} , {bombTypes[i].color} , {bombTypes [i].explosionSize} " , screenWidth / 2 - 80, 50 + i * 20, 20, Color.Yellow);
+            }
         }
     }
 }

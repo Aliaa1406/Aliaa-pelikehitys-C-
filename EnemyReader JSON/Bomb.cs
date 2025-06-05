@@ -12,8 +12,28 @@ namespace EnemyReader_JSON
         public float Angle;
         public bool Active;
         public float Radius = 4f;
-        public Color Color;
+        public Color ScreenColor;
         public bool FiredByRed;
+
+        // choose
+        public string name;
+        public int damage;
+        public string color;
+        public int explosionSize;
+
+        public Bomb() 
+        {
+            Active = false;
+            Position = Vector2.Zero;
+            Velocity = Vector2.Zero;
+            Direction = new Vector2(1.0f, 0.0f); // Default direction (right)
+            Angle = 0.0f;
+          
+
+
+         
+        }
+
 
         public Bomb(bool firedByRed = true)
         {
@@ -25,7 +45,7 @@ namespace EnemyReader_JSON
             FiredByRed = firedByRed;
 
             
-            Color = firedByRed ? new Color(255, 200, 50, 255) : new Color(50, 200, 255, 255);
+            ScreenColor= firedByRed ? new Color(255, 200, 50, 255) : new Color(50, 200, 255, 255);
         }
 
         // Recreate direction vector using angle
@@ -112,7 +132,7 @@ namespace EnemyReader_JSON
         {
             if (Active)
             {
-                Raylib.DrawCircle((int)Position.X, (int)Position.Y, Radius, Color);
+                Raylib.DrawCircle((int)Position.X, (int)Position.Y, Radius, ScreenColor);
 
                 // Draw 
                 for (int i = 1; i <= 5; i++)
@@ -123,9 +143,9 @@ namespace EnemyReader_JSON
 
                     // Fade the trail
                     int alpha = (int)(200 * (1.0f - (i * 0.2f)));
-                    Color trailColor = new Color(Color.R, Color.G, Color.B, (byte)alpha);
+                    Color trailScreenColor = new Color(ScreenColor.R, ScreenColor.G, ScreenColor.B, (byte)alpha);
 
-                    Raylib.DrawCircle((int)trailX, (int)trailY, trailRadius, trailColor);
+                    Raylib.DrawCircle((int)trailX, (int)trailY, trailRadius, trailScreenColor);
                 }
             }
         }

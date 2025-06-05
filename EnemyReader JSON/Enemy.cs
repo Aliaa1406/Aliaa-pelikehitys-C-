@@ -11,10 +11,11 @@ namespace EnemyReader
         public Color Color;
         public int Health = 2;
         private float oscillation = 0;
-
+        private Vector2 basePosition;
         public Enemy(Vector2 position, float radius, Color color)
         {
             Position = position;
+            basePosition = position;
             Radius = radius;
             Color = color;
         }
@@ -23,8 +24,8 @@ namespace EnemyReader
         {
             
             oscillation += 0.05f;
-            float offset = (float)Math.Sin(oscillation) * 2;
-            Position = new Vector2(Position.X, Position.Y + offset);
+            Vector2 oscillationDirection = Vector2.Transform(Vector2.UnitY, Matrix3x2.CreateRotation(oscillation));
+            Vector2 oscillationOffset = oscillationDirection * 2;
         }
 
         public bool CheckHit(Vector2 bombPos)

@@ -1,0 +1,9 @@
+{
+"name" : "Red Bullet",
+"damage": "20",
+"color" : "Red",
+"explosionSize": "10"
+}
+
+
+  

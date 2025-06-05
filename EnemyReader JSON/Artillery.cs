@@ -35,11 +35,8 @@ namespace EnemyReader_JSON
             );
 
             // Draw tank barrel
-            float radians = (float)(angle * Math.PI / 180.0f);
-            float endX = Position.X + (float)Math.Cos(radians) * BarrelLength;
-            float endY = Position.Y - (float)Math.Sin(radians) * BarrelLength;
-
-            Raylib.DrawLineEx(Position, new Vector2(endX, endY), BarrelWidth, Color);
+            Vector2 turretDir = Vector2.Transform(Vector2.UnitX, Matrix3x2.CreateRotation(-angle * Raylib.DEG2RAD));
+            Raylib.DrawLineEx(Position, Position + turretDir * BarrelLength, BarrelWidth, Color);
         }
     }
 }
