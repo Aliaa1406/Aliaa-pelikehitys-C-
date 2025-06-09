@@ -96,10 +96,7 @@ namespace DungeonCrawl
                         DrawPlayer(player);
                         DrawCommands();
                         DrawInfo(player, monsters, items, messages);
-                        // Draw map
-                        // Draw information
-                        // Wait for player command
-                        // Process player command
+                        
                         while (true)
                         {
                             messages.Clear();
