@@ -5,137 +5,102 @@ namespace Space_Shooter
 {
     internal class Asteroid
     {
-        public Vector2 position;
-        public Vector2 velocity;
-        public float rotation;
-        public float rotationSpeed;
-        public float radius;
-        public bool IsActive;
-        public int Size;
-        private Texture2D asteroidTexture;
-        private bool textureLoaded = false;
+        private TransformComponent transform;
+        private int size; 
+        private float radius;
+        public bool IsActive { get; private set; } = true;
 
-        public Asteroid(Vector2 startPosition, Vector2 startVelocity, float startRadius, int size, string texturePath = null)
+        public Asteroid(Vector2 startPosition, Vector2 startVelocity, int asteroidSize, float rotationSpeed)
         {
-            position = startPosition;
-            velocity = startVelocity;
-            radius = startRadius;
-            Size = size;
-            rotation = (float)new Random().NextDouble() * 360;
-            rotationSpeed = (float)(new Random().NextDouble() * 100 - 50);
-            IsActive = true;
-
-            if (texturePath != null && System.IO.File.Exists(texturePath))
-            {
-                asteroidTexture = Raylib.LoadTexture(texturePath);
-                textureLoaded = true;
-            }
-            else
-            {
-                textureLoaded = false;
-            }
+            size = asteroidSize;
+            radius = GetRadiusForSize(size);
+            transform = new TransformComponent(startPosition, startVelocity, 0, rotationSpeed);
         }
 
-        public void Update(float deltaTime, int screenWidth, int screenHeight)
+        private float GetRadiusForSize(int size)
         {
-            // Päivitä sijainti
-            position.X += velocity.X * deltaTime;
-            position.Y += velocity.Y * deltaTime;
-
-            // Päivitä pyöriminen
-            rotation += rotationSpeed * deltaTime;
-
-            // Käsittele ruudun rajojen ylitys
-            WrapAroundScreen(screenWidth, screenHeight);
+            return size switch
+            {
+                1 => 25f,  // Small
+                2 => 40f,  // Big
+                
+            };
         }
 
-        private void WrapAroundScreen(int screenWidth, int screenHeight)
+        public void Update(float deltaTime)
         {
-            // Käsittele ruudun rajojen ylitys
-            if (position.X < 0)
-                position.X = screenWidth;
-            else if (position.X > screenWidth)
-                position.X = 0;
-
-            if (position.Y < 0)
-                position.Y = screenHeight;
-            else if (position.Y > screenHeight)
-                position.Y = 0;
+            if (!IsActive) return;
+            transform.Update(deltaTime);
+            transform.WrapAroundScreen(AsteroidsGame.GetScreenWidth(), AsteroidsGame.GetScreenHeight());
         }
 
         public void Draw()
         {
-            if (textureLoaded)
+            if (!IsActive) return;
+
+            // Check if textures are loaded by checking if any texture has a valid ID
+            if (AreTexturesLoaded())
             {
-                // Piirrä asteroidi käyttäen tekstuuria
-                Rectangle sourceRec = new Rectangle(0, 0, asteroidTexture.Width, asteroidTexture.Height);
-
-                // Scale texture based on asteroid size
-                float scale = radius * 2 / asteroidTexture.Width;
-
-                // Kohdesuorakulmio
-                Rectangle destRec = new Rectangle(
-                    position.X,
-                    position.Y,
-                    asteroidTexture.Width * scale,
-                    asteroidTexture.Height * scale
-                );
-
-                // Kuvan keskipiste (tarvitaan kierrättämiseen)
-                Vector2 origin = new Vector2(asteroidTexture.Width / 2, asteroidTexture.Height / 2);
-
-                // Piirrä tekstuuri kierrettynä
-                Raylib.DrawTexturePro(
-                    asteroidTexture,
-                    sourceRec,
-                    destRec,
-                    origin,
-                    rotation,
-                    Color.White
-                );
-            }
-            else
-            {
-                // Piirrä asteroidi monikulmiona käyttäen Vector2.Transform sin/cos sijaan
-                int vertices = 8;
-                float angleStep = 360.0f / vertices;
-
-                for (int i = 0; i < vertices; i++)
+                var texture = AsteroidsGame.GetAsteroidTexture(size);
+                if (texture.Id != 0)
                 {
-                    float angle1 = rotation + i * angleStep;
-                    float angle2 = rotation + (i + 1) * angleStep;
-
-                    Vector2 dir1 = Vector2.Transform(Vector2.UnitY, Matrix3x2.CreateRotation(-angle1 * Raylib.DEG2RAD));
-                    Vector2 dir2 = Vector2.Transform(Vector2.UnitY, Matrix3x2.CreateRotation(-angle2 * Raylib.DEG2RAD));
-
-                    Vector2 p1 = position + dir1 * radius;
-                    Vector2 p2 = position + dir2 * radius;
-
-                    Raylib.DrawLineV(p1, p2, Color.White);
+                    DrawWithTexture(texture);
+                    return;
                 }
+            }
+            DrawAsPolygon();
+        }
+
+        // Helper method to check if textures are loaded
+        private bool AreTexturesLoaded()
+        {
+            // Check if any of the asteroid textures are loaded
+            return AsteroidsGame.ASTEROID_BROWNTexture.Id != 0 ||
+                   AsteroidsGame.ASTEROID_GREYTexture.Id != 0;
+        }
+
+        private void DrawWithTexture(Texture2D texture)
+        {
+            Rectangle sourceRec = new Rectangle(0, 0, texture.Width, texture.Height);
+            float scale = (radius * 2) / texture.Width;
+            Rectangle destRec = new Rectangle(
+                transform.position.X,
+                transform.position.Y,
+                texture.Width * scale,
+                texture.Height * scale
+            );
+            Vector2 origin = new Vector2(texture.Width / 2, texture.Height / 2);
+            Raylib.DrawTexturePro(texture, sourceRec, destRec, origin, transform.rotation, Color.White);
+        }
+
+        private void DrawAsPolygon()
+        {
+            // Draw as octagon
+            int vertices = 8;
+            float angleStep = 360.0f / vertices;
+            for (int i = 0; i < vertices; i++)
+            {
+                float angle1 = transform.rotation + i * angleStep;
+                float angle2 = transform.rotation + (i + 1) * angleStep;
+                Vector2 p1 = transform.position + GetDirectionFromAngle(angle1) * radius;
+                Vector2 p2 = transform.position + GetDirectionFromAngle(angle2) * radius;
+                Raylib.DrawLineV(p1, p2, Color.White);
             }
         }
 
-        public void UnloadResources()
+        private Vector2 GetDirectionFromAngle(float angleDegrees)
         {
-            if (textureLoaded)
-            {
-                Raylib.UnloadTexture(asteroidTexture);
-                textureLoaded = false;
-            }
+            float radians = angleDegrees * (MathF.PI / 180.0f);
+            return new Vector2(MathF.Cos(radians), MathF.Sin(radians));
         }
 
         public void Destroy()
         {
-            UnloadResources();
             IsActive = false;
         }
 
-        // Tarkista törmäys ammusten kanssa
-        public bool CheckCollision(Vector2 point)
-        {
-            float distance = Vector2.Distance(position, point);
-            return distance <= radius;
-        }
+        public Vector2 GetPosition() => transform.position;
+        public float GetRadius() => radius;
+        public int GetSize() => size;
     }
 }
