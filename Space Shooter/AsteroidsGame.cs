@@ -10,8 +10,7 @@ namespace Space_Shooter
         private const int INITIAL_ASTEROID_COUNT = 4;
         private const float PLAYER_RADIUS = 20.0f;
         private const float ENEMY_SPAWN_INTERVAL = 15.0f;
-
-
+        private const float BULLET_RADIUS = 3.0f;
 
         // Textures
         public static Texture2D PlayerShipTexture;
@@ -19,28 +18,22 @@ namespace Space_Shooter
         public static Texture2D ASTEROID_BROWNTexture;
         public static Texture2D ASTEROID_GREYTexture;
 
-
         // Sounds
         public static Sound shootSound;
         public static Sound ExplosionSound;
         public static Music BackgroundMusic;
 
-
         public static void LoadAssets()
         {
-
             PlayerShipTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\playerShip3_green.png");
             UFOShipTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\ufoYellow.png");
             ASTEROID_BROWNTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\meteorBrown_big4.png");
             ASTEROID_GREYTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\meteorGrey_big4.png");
 
-
-
             shootSound = Raylib.LoadSound("C:\\Tiedostot\\Space Shooter\\Image\\shooting-star-2-104073.mp3");
             ExplosionSound = Raylib.LoadSound("C:\\Tiedostot\\Space Shooter\\Image\\large-underwater-explosion-190270.mp3");
             BackgroundMusic = Raylib.LoadMusicStream("C:\\Tiedostot\\Space Shooter\\Image\\space-sound-mid-109575.mp3");
         }
-
 
         public static void UnloadAssets()
         {
@@ -50,14 +43,11 @@ namespace Space_Shooter
             if (ASTEROID_BROWNTexture.Id != 0) Raylib.UnloadTexture(ASTEROID_BROWNTexture);
             if (ASTEROID_GREYTexture.Id != 0) Raylib.UnloadTexture(ASTEROID_GREYTexture);
 
-
             // Unload sounds
             if (Raylib.IsSoundValid(shootSound)) Raylib.UnloadSound(shootSound);
             if (Raylib.IsSoundValid(ExplosionSound)) Raylib.UnloadSound(ExplosionSound);
             if (Raylib.IsMusicValid(BackgroundMusic)) Raylib.UnloadMusicStream(BackgroundMusic);
         }
-
-
 
         // Game objects
         private Ship player;
@@ -84,6 +74,9 @@ namespace Space_Shooter
         private float enemySpawnTimer = 0f;
         private float gameOverTimer = 0f;
         private const float GAME_OVER_DISPLAY_TIME = 2.0f;
+
+        // Screen center for easy access
+        private static readonly Vector2 ScreenCenter = new Vector2(SCREEN_WIDTH / 2f, SCREEN_HEIGHT / 2f);
 
         public AsteroidsGame()
         {
@@ -113,8 +106,8 @@ namespace Space_Shooter
             enemySpawnTimer = 0f;
             gameOverTimer = 0f;
 
-            // Create player
-            player = new Ship(new Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2));
+            // Create player at screen center
+            player = new Ship(ScreenCenter);
 
             // Create asteroids
             asteroids = new List<Asteroid>();
@@ -144,7 +137,6 @@ namespace Space_Shooter
 
             CleanupResources();
         }
-
 
         // MAIN UPDATE LOOP
         private void Update(float deltaTime)
@@ -209,10 +201,15 @@ namespace Space_Shooter
         {
             gameOverTimer += deltaTime;
 
-            // Auto restart after 2 seconds
-            if (gameOverTimer >= 2.0f)
+            // Allow player to restart manually or auto-restart after delay
+            if (Raylib.IsKeyPressed(KeyboardKey.Space) || Raylib.IsKeyPressed(KeyboardKey.Enter))
             {
                 InitializeGame();
+            }
+            else if (gameOverTimer >= GAME_OVER_DISPLAY_TIME)
+            {
+                // Show restart instructions instead of auto-restarting
+                // Player can press Space or Enter to restart
             }
         }
 
@@ -243,6 +240,9 @@ namespace Space_Shooter
 
         private void CheckPlayerAsteroidCollisions()
         {
+            // Don't check collisions if game is over
+            if (currentGameState != GameState.Playing) return;
+
             Vector2 playerPos = player.GetPosition();
 
             foreach (var asteroid in asteroids)
@@ -263,7 +263,6 @@ namespace Space_Shooter
         }
 
         // MAIN DRAWING LOOP
-
         private void Draw()
         {
             Raylib.BeginDrawing();
@@ -319,12 +318,17 @@ namespace Space_Shooter
             // Show "GAME OVER" text
             string gameOverText = "GAME OVER";
             int gameOverWidth = Raylib.MeasureText(gameOverText, 60);
-            Raylib.DrawText(gameOverText, SCREEN_WIDTH / 2 - gameOverWidth / 2, SCREEN_HEIGHT / 2 - 30, 60, Color.Red);
+            Raylib.DrawText(gameOverText, SCREEN_WIDTH / 2 - gameOverWidth / 2, SCREEN_HEIGHT / 2 - 60, 60, Color.Red);
 
             // Show final score
             string finalScoreText = $"Final Score: {score}";
             int scoreWidth = Raylib.MeasureText(finalScoreText, 30);
-            Raylib.DrawText(finalScoreText, SCREEN_WIDTH / 2 - scoreWidth / 2, SCREEN_HEIGHT / 2 + 30, 30, Color.White);
+            Raylib.DrawText(finalScoreText, SCREEN_WIDTH / 2 - scoreWidth / 2, SCREEN_HEIGHT / 2 - 10, 30, Color.White);
+
+            // Show restart instructions
+            string restartText = "Press SPACE or ENTER to restart";
+            int restartWidth = Raylib.MeasureText(restartText, 20);
+            Raylib.DrawText(restartText, SCREEN_WIDTH / 2 - restartWidth / 2, SCREEN_HEIGHT / 2 + 30, 20, Color.Yellow);
         }
 
         private void CreateAsteroid(int size)
@@ -352,8 +356,8 @@ namespace Space_Shooter
 
         private Vector2 GetDirectionToCenter(Vector2 fromPosition)
         {
-            Vector2 direction = new Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2) - fromPosition;
-            return Vector2.Normalize(direction);
+            Vector2 direction = ScreenCenter - fromPosition;
+            return Vector2.Normalize(direction); // Using Vector2.Normalize instead of manual calculation
         }
 
         private void SplitAsteroid(Asteroid asteroid)
@@ -421,7 +425,9 @@ namespace Space_Shooter
             {
                 for (int j = enemies.Count - 1; j >= 0; j--)
                 {
-                    if (Raylib.CheckCollisionCircles(bullets[i].GetPosition(), 3, enemies[j].GetPosition(), enemies[j].GetRadius()))
+                    // Using Raylib.CheckCollisionCircles instead of manual distance calculation
+                    if (Raylib.CheckCollisionCircles(bullets[i].GetPosition(), BULLET_RADIUS,
+                                                   enemies[j].GetPosition(), enemies[j].GetRadius()))
                     {
                         score += 500; // Enemy is worth more points
 
@@ -439,6 +445,9 @@ namespace Space_Shooter
 
         private void CheckPlayerEnemyCollisions()
         {
+            // Don't check collisions if game is over
+            if (currentGameState != GameState.Playing) return;
+
             Vector2 playerPos = player.GetPosition();
 
             foreach (var enemy in enemies)
@@ -453,6 +462,9 @@ namespace Space_Shooter
 
         private void CheckEnemyBulletPlayerCollisions()
         {
+            // Don't check collisions if game is over
+            if (currentGameState != GameState.Playing) return;
+
             Vector2 playerPos = player.GetPosition();
 
             foreach (var enemy in enemies)
@@ -460,7 +472,9 @@ namespace Space_Shooter
                 var enemyBullets = enemy.GetBullets();
                 for (int i = enemyBullets.Count - 1; i >= 0; i--)
                 {
-                    if (Raylib.CheckCollisionCircles(playerPos, PLAYER_RADIUS, enemyBullets[i].GetPosition(), 3))
+                    // Using consistent collision detection
+                    if (Raylib.CheckCollisionCircles(playerPos, PLAYER_RADIUS,
+                                                   enemyBullets[i].GetPosition(), BULLET_RADIUS))
                     {
                         enemyBullets[i].Destroy();
                         PlayerHit();
@@ -473,17 +487,17 @@ namespace Space_Shooter
         private void PlayerHit()
         {
             playerLives--;
-
-            // Reset player position to center
-            player = new Ship(new Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2));
-
             Console.WriteLine($"Player hit! Lives remaining: {playerLives}");
 
             // If no lives left, game over
             if (playerLives <= 0)
             {
                 GameOver();
+                return; // Exit early to prevent player reset
             }
+
+            // Only reset player position if still has lives
+            player = new Ship(ScreenCenter);
         }
 
         private void CheckBulletAsteroidCollisions()
@@ -494,7 +508,9 @@ namespace Space_Shooter
             {
                 for (int j = asteroids.Count - 1; j >= 0; j--)
                 {
-                    if (Raylib.CheckCollisionCircles(bullets[i].GetPosition(), 3, asteroids[j].GetPosition(), asteroids[j].GetRadius()))
+                    // Using Raylib.CheckCollisionCircles consistently
+                    if (Raylib.CheckCollisionCircles(bullets[i].GetPosition(), BULLET_RADIUS,
+                                                   asteroids[j].GetPosition(), asteroids[j].GetRadius()))
                     {
                         SplitAsteroid(asteroids[j]);
                         bullets[i].Destroy();
@@ -514,17 +530,17 @@ namespace Space_Shooter
             Raylib.CloseAudioDevice();
             Raylib.CloseWindow();
         }
-        // PUBLIC ACCESSORS FOR OTHER CLASSES
 
+        // PUBLIC ACCESSORS FOR OTHER CLASSES
         public static Texture2D GetPlayerTexture() => PlayerShipTexture;
 
         public static Texture2D GetAsteroidTexture(int size)
         {
             return size switch
             {
-                2 => ASTEROID_BROWNTexture,    
-                1 => ASTEROID_GREYTexture, 
-
+                2 => ASTEROID_BROWNTexture,
+                1 => ASTEROID_GREYTexture,
+                
             };
         }
 
@@ -536,5 +552,6 @@ namespace Space_Shooter
         public static float GetPlayerRadius() => PLAYER_RADIUS;
         public static int GetScreenWidth() => SCREEN_WIDTH;
         public static int GetScreenHeight() => SCREEN_HEIGHT;
+        public static Vector2 GetScreenCenter() => ScreenCenter;
     }
 }

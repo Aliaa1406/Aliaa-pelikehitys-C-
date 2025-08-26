@@ -9,7 +9,7 @@ namespace Space_Shooter
         private float speed = 400.0f;
         private float lifeTime = 2.0f;
         private float currentLife;
-        public bool IsActive { get; private set; } = true;
+        public bool IsActive  = true;
 
         public Bullet(Vector2 startPosition, Vector2 direction)
         {

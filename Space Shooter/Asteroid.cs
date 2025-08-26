@@ -6,8 +6,15 @@ namespace Space_Shooter
     internal class Asteroid
     {
         private TransformComponent transform;
-        private int size; 
+        private int size;
         private float radius;
+
+        // Constants for cleaner code
+        private const float SMALL_RADIUS = 25f;
+        private const float BIG_RADIUS = 40f;
+        private const int POLYGON_VERTICES = 8;
+        private const float DEGREES_TO_RADIANS = MathF.PI / 180.0f;
+
         public bool IsActive { get; private set; } = true;
 
         public Asteroid(Vector2 startPosition, Vector2 startVelocity, int asteroidSize, float rotationSpeed)
@@ -21,15 +28,16 @@ namespace Space_Shooter
         {
             return size switch
             {
-                1 => 25f,  // Small
-                2 => 40f,  // Big
-                
+                1 => SMALL_RADIUS,  // Small asteroid
+                2 => BIG_RADIUS,    // Big asteroid
+                _ => SMALL_RADIUS   // Default fallback
             };
         }
 
         public void Update(float deltaTime)
         {
             if (!IsActive) return;
+
             transform.Update(deltaTime);
             transform.WrapAroundScreen(AsteroidsGame.GetScreenWidth(), AsteroidsGame.GetScreenHeight());
         }
@@ -38,20 +46,27 @@ namespace Space_Shooter
         {
             if (!IsActive) return;
 
-            // Check if textures are loaded by checking if any texture has a valid ID
-            if (AreTexturesLoaded())
-            {
-                var texture = AsteroidsGame.GetAsteroidTexture(size);
-                if (texture.Id != 0)
-                {
-                    DrawWithTexture(texture);
-                    return;
-                }
-            }
+            // Try to draw with texture first, fallback to polygon
+            if (TryDrawWithTexture())
+                return;
+
             DrawAsPolygon();
         }
 
-        // Helper method to check if textures are loaded
+        private bool TryDrawWithTexture()
+        {
+            // Check if textures are loaded and get the appropriate texture
+            if (!AreTexturesLoaded())
+                return false;
+
+            var texture = AsteroidsGame.GetAsteroidTexture(size);
+            if (texture.Id == 0)
+                return false;
+
+            DrawWithTexture(texture);
+            return true;
+        }
+
         private bool AreTexturesLoaded()
         {
             // Check if any of the asteroid textures are loaded
@@ -62,6 +77,8 @@ namespace Space_Shooter
         private void DrawWithTexture(Texture2D texture)
         {
             Rectangle sourceRec = new Rectangle(0, 0, texture.Width, texture.Height);
+
+            // Calculate scale to fit the radius
             float scale = (radius * 2) / texture.Width;
             Rectangle destRec = new Rectangle(
                 transform.position.X,
@@ -69,28 +86,34 @@ namespace Space_Shooter
                 texture.Width * scale,
                 texture.Height * scale
             );
-            Vector2 origin = new Vector2(texture.Width / 2, texture.Height / 2);
+
+            Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f); // Use float literal
+
             Raylib.DrawTexturePro(texture, sourceRec, destRec, origin, transform.rotation, Color.White);
         }
 
         private void DrawAsPolygon()
         {
-            // Draw as octagon
-            int vertices = 8;
-            float angleStep = 360.0f / vertices;
-            for (int i = 0; i < vertices; i++)
+            // Draw as octagon using constants
+            float angleStep = 360.0f / POLYGON_VERTICES;
+
+            for (int i = 0; i < POLYGON_VERTICES; i++)
             {
                 float angle1 = transform.rotation + i * angleStep;
                 float angle2 = transform.rotation + (i + 1) * angleStep;
+
+                // Calculate vertices using helper method
                 Vector2 p1 = transform.position + GetDirectionFromAngle(angle1) * radius;
                 Vector2 p2 = transform.position + GetDirectionFromAngle(angle2) * radius;
+
                 Raylib.DrawLineV(p1, p2, Color.White);
             }
         }
 
         private Vector2 GetDirectionFromAngle(float angleDegrees)
         {
-            float radians = angleDegrees * (MathF.PI / 180.0f);
+            // Convert degrees to radians using constant
+            float radians = angleDegrees * DEGREES_TO_RADIANS;
             return new Vector2(MathF.Cos(radians), MathF.Sin(radians));
         }
 
@@ -99,8 +122,13 @@ namespace Space_Shooter
             IsActive = false;
         }
 
+        // Public accessors
         public Vector2 GetPosition() => transform.position;
         public float GetRadius() => radius;
         public int GetSize() => size;
+
+        // Additional useful accessors
+        public Vector2 GetVelocity() => transform.velocity;
+        public float GetRotation() => transform.rotation;
     }
 }
