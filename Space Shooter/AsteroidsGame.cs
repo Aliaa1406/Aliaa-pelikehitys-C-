@@ -53,27 +53,14 @@ namespace Space_Shooter
         private Ship player;
         private List<Asteroid> asteroids;
         private List<Enemy> enemies;
-        private HighScoreManager highScoreManager;
         private Random random;
 
-        // Game state enum
-        public enum GameState
-        {
-            Playing,
-            GameOver,
-            HighScoreEntry,
-            ShowingHighScores
-        }
-
-        // Game state
-        private GameState currentGameState = GameState.Playing;
+        // Game state - simplified
         private int score = 0;
         private int playerLives = 3;
         private bool gameRunning = true;
         private float gameTimer = 0f;
         private float enemySpawnTimer = 0f;
-        private float gameOverTimer = 0f;
-        private const float GAME_OVER_DISPLAY_TIME = 2.0f;
 
         // Screen center for easy access
         private static readonly Vector2 ScreenCenter = new Vector2(SCREEN_WIDTH / 2f, SCREEN_HEIGHT / 2f);
@@ -85,7 +72,6 @@ namespace Space_Shooter
             Raylib.InitAudioDevice();
 
             random = new Random();
-            highScoreManager = new HighScoreManager();
 
             // Load all assets using the centralized system
             LoadAssets();
@@ -99,12 +85,10 @@ namespace Space_Shooter
 
         private void InitializeGame()
         {
-            currentGameState = GameState.Playing;
             score = 0;
             playerLives = 3;
             gameTimer = 0f;
             enemySpawnTimer = 0f;
-            gameOverTimer = 0f;
 
             // Create player at screen center
             player = new Ship(ScreenCenter);
@@ -138,33 +122,13 @@ namespace Space_Shooter
             CleanupResources();
         }
 
-        // MAIN UPDATE LOOP
+        // MAIN UPDATE LOOP - Simplified
         private void Update(float deltaTime)
         {
             // Update background music
             if (Raylib.IsMusicValid(BackgroundMusic))
                 Raylib.UpdateMusicStream(BackgroundMusic);
 
-            // Handle different game states
-            switch (currentGameState)
-            {
-                case GameState.Playing:
-                    UpdatePlaying(deltaTime);
-                    break;
-                case GameState.GameOver:
-                    UpdateGameOver(deltaTime);
-                    break;
-                case GameState.HighScoreEntry:
-                    UpdateHighScoreEntry();
-                    break;
-                case GameState.ShowingHighScores:
-                    UpdateShowingHighScores();
-                    break;
-            }
-        }
-
-        private void UpdatePlaying(float deltaTime)
-        {
             // Update game timer
             gameTimer += deltaTime;
 
@@ -197,34 +161,6 @@ namespace Space_Shooter
             }
         }
 
-        private void UpdateGameOver(float deltaTime)
-        {
-            gameOverTimer += deltaTime;
-
-            // Allow player to restart manually or auto-restart after delay
-            if (Raylib.IsKeyPressed(KeyboardKey.Space) || Raylib.IsKeyPressed(KeyboardKey.Enter))
-            {
-                InitializeGame();
-            }
-            else if (gameOverTimer >= GAME_OVER_DISPLAY_TIME)
-            {
-                // Show restart instructions instead of auto-restarting
-                // Player can press Space or Enter to restart
-            }
-        }
-
-        private void UpdateHighScoreEntry()
-        {
-            // Just restart game instead
-            InitializeGame();
-        }
-
-        private void UpdateShowingHighScores()
-        {
-            // Just restart game instead
-            InitializeGame();
-        }
-
         private void UpdateAsteroids(float deltaTime)
         {
             for (int i = asteroids.Count - 1; i >= 0; i--)
@@ -240,9 +176,6 @@ namespace Space_Shooter
 
         private void CheckPlayerAsteroidCollisions()
         {
-            // Don't check collisions if game is over
-            if (currentGameState != GameState.Playing) return;
-
             Vector2 playerPos = player.GetPosition();
 
             foreach (var asteroid in asteroids)
@@ -255,35 +188,13 @@ namespace Space_Shooter
             }
         }
 
-        private void GameOver()
-        {
-            currentGameState = GameState.GameOver;
-            gameOverTimer = 0f;
-            Console.WriteLine($"Game Over! Final Score: {score}");
-        }
-
-        // MAIN DRAWING LOOP
+        // MAIN DRAWING LOOP - Simplified
         private void Draw()
         {
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.Black);
 
-            // Draw different screens based on game state
-            switch (currentGameState)
-            {
-                case GameState.Playing:
-                    DrawPlaying();
-                    break;
-                case GameState.GameOver:
-                    DrawGameOver();
-                    break;
-            }
-
-            Raylib.EndDrawing();
-        }
-
-        private void DrawPlaying()
-        {
+            // Always draw the game
             player.Draw();
 
             foreach (var asteroid in asteroids)
@@ -300,35 +211,13 @@ namespace Space_Shooter
             Raylib.DrawText($"Score: {score}", 10, 10, 20, Color.White);
 
             // Draw player lives as red rectangles
-            Raylib.DrawText("Lives:", 10, 40, 20, Color.White);
-            for (int i = 0; i < playerLives; i++)
-            {
-                Raylib.DrawRectangle(80 + i * 30, 40, 20, 20, Color.Red);
-            }
-        }
+           // Raylib.DrawText("Lives:", 10, 40, 20, Color.White);
+            //for (int i = 0; i < playerLives; i++)
+            //{
+            //    Raylib.DrawRectangle(80 + i * 30, 40, 20, 20, Color.Red);
+            //}
 
-        private void DrawGameOver()
-        {
-            // Draw game in background (dimmed)
-            DrawPlaying();
-
-            // Semi-transparent black overlay
-            Raylib.DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, new Color(0, 0, 0, 150));
-
-            // Show "GAME OVER" text
-            string gameOverText = "GAME OVER";
-            int gameOverWidth = Raylib.MeasureText(gameOverText, 60);
-            Raylib.DrawText(gameOverText, SCREEN_WIDTH / 2 - gameOverWidth / 2, SCREEN_HEIGHT / 2 - 60, 60, Color.Red);
-
-            // Show final score
-            string finalScoreText = $"Final Score: {score}";
-            int scoreWidth = Raylib.MeasureText(finalScoreText, 30);
-            Raylib.DrawText(finalScoreText, SCREEN_WIDTH / 2 - scoreWidth / 2, SCREEN_HEIGHT / 2 - 10, 30, Color.White);
-
-            // Show restart instructions
-            string restartText = "Press SPACE or ENTER to restart";
-            int restartWidth = Raylib.MeasureText(restartText, 20);
-            Raylib.DrawText(restartText, SCREEN_WIDTH / 2 - restartWidth / 2, SCREEN_HEIGHT / 2 + 30, 20, Color.Yellow);
+            Raylib.EndDrawing();
         }
 
         private void CreateAsteroid(int size)
@@ -475,9 +364,6 @@ namespace Space_Shooter
 
         private void CheckPlayerEnemyCollisions()
         {
-            // Don't check collisions if game is over
-            if (currentGameState != GameState.Playing) return;
-
             Vector2 playerPos = player.GetPosition();
 
             foreach (var enemy in enemies)
@@ -492,9 +378,6 @@ namespace Space_Shooter
 
         private void CheckEnemyBulletPlayerCollisions()
         {
-            // Don't check collisions if game is over
-            if (currentGameState != GameState.Playing) return;
-
             Vector2 playerPos = player.GetPosition();
 
             foreach (var enemy in enemies)
@@ -519,11 +402,12 @@ namespace Space_Shooter
             playerLives--;
             Console.WriteLine($"Player hit! Lives remaining: {playerLives}");
 
-            // If no lives left, game over
+            // If no lives left, restart the game immediately
             if (playerLives <= 0)
             {
-                GameOver();
-                return; // Exit early to prevent player reset
+                Console.WriteLine($"Game Over! Final Score: {score}");
+                InitializeGame(); // Restart immediately without any menu
+                return;
             }
 
             // Only reset player position if still has lives
