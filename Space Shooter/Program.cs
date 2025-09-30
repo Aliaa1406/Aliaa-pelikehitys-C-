@@ -2,11 +2,11 @@
 
 namespace Space_Shooter
 {
-    class Program
+    internal static class Program
     {
         static void Main(string[] args)
         {
-            var game = new AsteroidsGame();
+            AsteroidsGame game = new AsteroidsGame();
             game.Run();
         }
     }

@@ -1,493 +1,326 @@
-﻿using System.Numerics;
-using Raylib_cs;
+﻿using Raylib_cs;
+using System.Numerics;
 
 namespace Space_Shooter
 {
     internal class AsteroidsGame
     {
-        private const int SCREEN_WIDTH = 800;
-        private const int SCREEN_HEIGHT = 600;
-        private const int INITIAL_ASTEROID_COUNT = 4;
-        private const float PLAYER_RADIUS = 20.0f;
-        private const float ENEMY_SPAWN_INTERVAL = 15.0f;
-        private const float BULLET_RADIUS = 3.0f;
+        private static readonly Random random = new Random();
+
+        public const int SCREEN_WIDTH = 1280;
+        public const int SCREEN_HEIGHT = 720;
 
         // Textures
-        public static Texture2D PlayerShipTexture;
-        public static Texture2D UFOShipTexture;
-        public static Texture2D ASTEROID_BROWNTexture;
-        public static Texture2D ASTEROID_GREYTexture;
+        public static Texture2D ShipTexture;
+        public static Texture2D EnemyTexture;
+        public static Texture2D AsteroidLargeTexture;
+        public static Texture2D AsteroidMediumTexture;
+        public static Texture2D AsteroidSmallTexture;
+        public static Texture2D BulletTexture;
+        public static Texture2D EnemyBulletTexture;
 
-        // Sounds
-        public static Sound shootSound;
-        public static Sound ExplosionSound;
-        public static Music BackgroundMusic;
+        // Sound System
+        private SoundSystem soundSystem;
 
-        public static void LoadAssets()
-        {
-            PlayerShipTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\playerShip3_green.png");
-            UFOShipTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\ufoYellow.png");
-            ASTEROID_BROWNTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\meteorBrown_big4.png");
-            ASTEROID_GREYTexture = Raylib.LoadTexture("C:\\Tiedostot\\Space Shooter\\Image\\meteorGrey_big4.png");
+        // Game Timer
+        private float gameTime = 0f;
+        private const float UFO_SPAWN_TIME = 15f;
+        private float lastUfoSpawn = 0f;
 
-            shootSound = Raylib.LoadSound("C:\\Tiedostot\\Space Shooter\\Image\\shooting-star-2-104073.mp3");
-            ExplosionSound = Raylib.LoadSound("C:\\Tiedostot\\Space Shooter\\Image\\large-underwater-explosion-190270.mp3");
-            BackgroundMusic = Raylib.LoadMusicStream("C:\\Tiedostot\\Space Shooter\\Image\\space-sound-mid-109575.mp3");
-        }
-
-        public static void UnloadAssets()
-        {
-            // Unload textures
-            if (PlayerShipTexture.Id != 0) Raylib.UnloadTexture(PlayerShipTexture);
-            if (UFOShipTexture.Id != 0) Raylib.UnloadTexture(UFOShipTexture);
-            if (ASTEROID_BROWNTexture.Id != 0) Raylib.UnloadTexture(ASTEROID_BROWNTexture);
-            if (ASTEROID_GREYTexture.Id != 0) Raylib.UnloadTexture(ASTEROID_GREYTexture);
-
-            // Unload sounds
-            if (Raylib.IsSoundValid(shootSound)) Raylib.UnloadSound(shootSound);
-            if (Raylib.IsSoundValid(ExplosionSound)) Raylib.UnloadSound(ExplosionSound);
-            if (Raylib.IsMusicValid(BackgroundMusic)) Raylib.UnloadMusicStream(BackgroundMusic);
-        }
-
-        // Game objects
         private Ship player;
-        private List<Asteroid> asteroids;
-        private List<Enemy> enemies;
-        private Random random;
+        private List<Asteroid> asteroids = new List<Asteroid>();
+        private List<Enemy> enemies = new List<Enemy>();
+        private List<Bullet> bullets = new List<Bullet>();
+        private List<Bullet> enemyBullets = new List<Bullet>();
 
-        // Game state - simplified
-        private int score = 0;
-        private int playerLives = 3;
-        private bool gameRunning = true;
-        private float gameTimer = 0f;
-        private float enemySpawnTimer = 0f;
-
-        // Screen center for easy access
-        private static readonly Vector2 ScreenCenter = new Vector2(SCREEN_WIDTH / 2f, SCREEN_HEIGHT / 2f);
+        private int playerLives;
+        private int score;
 
         public AsteroidsGame()
         {
             Raylib.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Asteroids Game");
-            Raylib.SetTargetFPS(60);
             Raylib.InitAudioDevice();
+            Raylib.SetTargetFPS(60);
 
-            random = new Random();
+            // Load textures
+            ShipTexture = Raylib.LoadTexture("Image/playerShip3_green.png");
+            EnemyTexture = Raylib.LoadTexture("Image/ufoYellow.png");
+            AsteroidLargeTexture = Raylib.LoadTexture("Image/meteorBrown_big4.png");
+            AsteroidMediumTexture = Raylib.LoadTexture("Image/meteorGrey_big4.png");
+            AsteroidSmallTexture = Raylib.LoadTexture("Image/meteorGrey_small1.png");
+            BulletTexture = Raylib.LoadTexture("Image/bullet.png");
+            EnemyBulletTexture = Raylib.LoadTexture("Image/enemyBullet.png");
 
-            // Load all assets using the centralized system
-            LoadAssets();
+            // Initialize sound system
+            soundSystem = new SoundSystem();
 
-            // Start background music
-            if (Raylib.IsMusicValid(BackgroundMusic))
-                Raylib.PlayMusicStream(BackgroundMusic);
+            // Load high scores
+            HighScoreManager.Load();
 
             InitializeGame();
         }
 
         private void InitializeGame()
         {
-            score = 0;
+            player = new Ship(new Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2), ShipTexture, soundSystem);
+            asteroids.Clear();
+            enemies.Clear();
+            bullets.Clear();
+            enemyBullets.Clear();
+
             playerLives = 3;
-            gameTimer = 0f;
-            enemySpawnTimer = 0f;
+            score = 0;
+            gameTime = 0f;
+            lastUfoSpawn = 0f;
 
-            // Create player at screen center
-            player = new Ship(ScreenCenter);
-
-            // Create asteroids
-            asteroids = new List<Asteroid>();
-            CreateInitialAsteroids();
-
-            // Clear enemies
-            enemies = new List<Enemy>();
+            // Create initial asteroids
+            for (int i = 0; i < 5; i++)
+                SpawnAsteroid(AsteroidSize.Large);
         }
 
-        private void CreateInitialAsteroids()
+        private void SpawnAsteroid(AsteroidSize size, Vector2? position = null)
         {
-            asteroids.Clear();
-            for (int i = 0; i < INITIAL_ASTEROID_COUNT; i++)
+            Vector2 pos;
+            if (position.HasValue)
             {
-                CreateAsteroid(2); // Size 2 = big (becomes small when split)
+                pos = position.Value;
             }
+            else
+            {
+                // Spawn away from player
+                do
+                {
+                    pos = new Vector2(random.NextSingle() * SCREEN_WIDTH, random.NextSingle() * SCREEN_HEIGHT);
+                } while (Vector2.Distance(pos, player.GetPosition()) < 100);
+            }
+
+            Vector2 vel = new Vector2(random.NextSingle() - 0.5f, random.NextSingle() - 0.5f);
+            vel = Vector2.Normalize(vel) * (50 + random.NextSingle() * 50);
+
+            float rotSpeed = (random.NextSingle() - 0.5f) * 2;
+
+            asteroids.Add(new Asteroid(pos, vel, size, rotSpeed));
+        }
+
+        private void SpawnEnemy()
+        {
+            float x = random.NextSingle() * SCREEN_WIDTH;
+            Vector2 pos = new(x, -50);
+            enemies.Add(new Enemy(pos, EnemyTexture, player));
         }
 
         public void Run()
         {
-            while (!Raylib.WindowShouldClose() && gameRunning)
+            while (!Raylib.WindowShouldClose())
             {
                 float deltaTime = Raylib.GetFrameTime();
                 Update(deltaTime);
                 Draw();
             }
 
-            CleanupResources();
+            soundSystem.Unload();
+            Raylib.CloseAudioDevice();
+            Raylib.CloseWindow();
         }
 
-        // MAIN UPDATE LOOP - Simplified
         private void Update(float deltaTime)
         {
-            // Update background music
-            if (Raylib.IsMusicValid(BackgroundMusic))
-                Raylib.UpdateMusicStream(BackgroundMusic);
+            gameTime += deltaTime;
 
-            // Update game timer
-            gameTimer += deltaTime;
-
-            // Update player movement and shooting
             player.Update(deltaTime);
+            bullets = player.GetBullets();
 
-            // Play shooting sound when player shoots
-            if (Raylib.IsKeyPressed(KeyboardKey.Space) && Raylib.IsSoundValid(shootSound))
+            foreach (var a in asteroids.ToArray()) a.Update(deltaTime);
+            foreach (var e in enemies.ToArray())
             {
-                Raylib.PlaySound(shootSound);
+                e.Update(deltaTime);
+                enemyBullets.AddRange(e.GetBullets());
+            }
+            foreach (var b in bullets.ToArray()) b.Update(deltaTime);
+            foreach (var eb in enemyBullets.ToArray()) eb.Update(deltaTime);
+
+            // Spawn UFO every 15 seconds
+            if (gameTime - lastUfoSpawn >= UFO_SPAWN_TIME)
+            {
+                SpawnEnemy();
+                lastUfoSpawn = gameTime;
             }
 
-            // Update all asteroids
-            UpdateAsteroids(deltaTime);
+            // Player bullets vs asteroids
+            foreach (var bullet in bullets.ToArray())
+            {
+                foreach (var asteroid in asteroids.ToArray())
+                {
+                    if (bullet.IsActive && asteroid.IsActive)
+                    {
+                        if (Vector2.Distance(bullet.GetPosition(), asteroid.GetPosition()) < asteroid.GetRadius())
+                        {
+                            bullet.Destroy();
+                            Vector2 asteroidPos = asteroid.GetPosition();
+                            AsteroidSize currentSize = asteroid.GetSize();
+                            asteroid.Destroy();
+                            soundSystem.PlayExplosionSound();
 
-            // Update all enemies
-            UpdateEnemies(deltaTime);
+                            // Add score based on asteroid size
+                            switch (currentSize)
+                            {
+                                case AsteroidSize.Large: score += 20; break;
+                                case AsteroidSize.Medium: score += 50; break;
+                                case AsteroidSize.Small: score += 100; break;
+                            }
 
-            // Check all collision types
-            CheckBulletAsteroidCollisions();
-            CheckBulletEnemyCollisions();
-            CheckPlayerAsteroidCollisions();
-            CheckPlayerEnemyCollisions();
-            CheckEnemyBulletPlayerCollisions();
+                            // Split asteroid
+                            if (currentSize != AsteroidSize.Small)
+                            {
+                                AsteroidSize nextSize = currentSize == AsteroidSize.Large ? AsteroidSize.Medium : AsteroidSize.Small;
+                                for (int i = 0; i < 2; i++)
+                                {
+                                    SpawnAsteroid(nextSize, asteroidPos);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-            // Spawn new asteroids if screen is clear
+            // Player bullets vs enemies
+            foreach (var bullet in bullets.ToArray())
+            {
+                foreach (var enemy in enemies.ToArray())
+                {
+                    if (bullet.IsActive && enemy.IsActive)
+                    {
+                        if (Vector2.Distance(bullet.GetPosition(), enemy.GetPosition()) < 25)
+                        {
+                            bullet.Destroy();
+                            enemy.Destroy();
+                            soundSystem.PlayExplosionSound();
+                            score += 500;
+                        }
+                    }
+                }
+            }
+
+            // Enemy bullets vs asteroids
+            foreach (var bullet in enemyBullets.ToArray())
+            {
+                foreach (var asteroid in asteroids.ToArray())
+                {
+                    if (bullet.IsActive && asteroid.IsActive)
+                    {
+                        if (Vector2.Distance(bullet.GetPosition(), asteroid.GetPosition()) < asteroid.GetRadius())
+                        {
+                            bullet.Destroy();
+                            Vector2 asteroidPos = asteroid.GetPosition();
+                            AsteroidSize currentSize = asteroid.GetSize();
+                            asteroid.Destroy();
+                            soundSystem.PlayExplosionSound();
+
+                            // Split asteroid
+                            if (currentSize != AsteroidSize.Small)
+                            {
+                                AsteroidSize nextSize = currentSize == AsteroidSize.Large ? AsteroidSize.Medium : AsteroidSize.Small;
+                                for (int i = 0; i < 2; i++)
+                                {
+                                    SpawnAsteroid(nextSize, asteroidPos);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Player vs asteroids
+            foreach (var asteroid in asteroids.ToArray())
+            {
+                if (asteroid.IsActive && Vector2.Distance(player.GetPosition(), asteroid.GetPosition()) < asteroid.GetRadius() + 15)
+                {
+                    asteroid.Destroy();
+                    soundSystem.PlayExplosionSound();
+                    PlayerHit();
+                }
+            }
+
+            // Player vs enemies
+            foreach (var enemy in enemies.ToArray())
+            {
+                if (enemy.IsActive && Vector2.Distance(player.GetPosition(), enemy.GetPosition()) < 25)
+                {
+                    enemy.Destroy();
+                    soundSystem.PlayExplosionSound();
+                    PlayerHit();
+                }
+            }
+
+            // Player vs enemy bullets
+            foreach (var bullet in enemyBullets.ToArray())
+            {
+                if (bullet.IsActive && Vector2.Distance(player.GetPosition(), bullet.GetPosition()) < 20)
+                {
+                    bullet.Destroy();
+                    soundSystem.PlayExplosionSound();
+                    PlayerHit();
+                }
+            }
+
+            // Clean up inactive objects
+            asteroids.RemoveAll(a => !a.IsActive);
+            enemies.RemoveAll(e => !e.IsActive);
+            bullets.RemoveAll(b => !b.IsActive);
+            enemyBullets.RemoveAll(b => !b.IsActive);
+
+            // Spawn new asteroids when all are destroyed
             if (asteroids.Count == 0)
             {
-                CreateInitialAsteroids();
+                for (int i = 0; i < 5; i++)
+                    SpawnAsteroid(AsteroidSize.Large);
             }
         }
 
-        private void UpdateAsteroids(float deltaTime)
-        {
-            for (int i = asteroids.Count - 1; i >= 0; i--)
-            {
-                asteroids[i].Update(deltaTime);
-
-                if (!asteroids[i].IsActive)
-                {
-                    asteroids.RemoveAt(i);
-                }
-            }
-        }
-
-        private void CheckPlayerAsteroidCollisions()
-        {
-            Vector2 playerPos = player.GetPosition();
-
-            foreach (var asteroid in asteroids)
-            {
-                if (Raylib.CheckCollisionCircles(playerPos, PLAYER_RADIUS, asteroid.GetPosition(), asteroid.GetRadius()))
-                {
-                    PlayerHit();
-                    return;
-                }
-            }
-        }
-
-        // MAIN DRAWING LOOP - Simplified
         private void Draw()
         {
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.Black);
 
-            // Always draw the game
             player.Draw();
+            foreach (var a in asteroids) a.Draw();
+            foreach (var e in enemies) e.Draw();
+            foreach (var b in bullets) b.Draw();
+            foreach (var eb in enemyBullets) eb.Draw();
 
-            foreach (var asteroid in asteroids)
+            // UI
+            Raylib.DrawText($"Score: {score}", 10, 10, 24, Color.White);
+            Raylib.DrawText($"Lives: {playerLives}", 10, 40, 24, Color.White);
+
+            float timeUntilNextUfo = UFO_SPAWN_TIME - (gameTime - lastUfoSpawn);
+            if (timeUntilNextUfo > 0)
             {
-                asteroid.Draw();
+              //  Raylib.DrawText($"Next UFO: {timeUntilNextUfo:F0}s", 10, 70, 20, Color.Yellow);
             }
 
-            foreach (var enemy in enemies)
-            {
-                enemy.Draw();
-            }
-
-            // Draw game UI
-            Raylib.DrawText($"Score: {score}", 10, 10, 20, Color.White);
-
-            // Draw player lives as red rectangles
-           // Raylib.DrawText("Lives:", 10, 40, 20, Color.White);
-            //for (int i = 0; i < playerLives; i++)
-            //{
-            //    Raylib.DrawRectangle(80 + i * 30, 40, 20, 20, Color.Red);
-            //}
+            // Draw high scores panel
+           // HighScoreManager.DrawHighScorePanel();
 
             Raylib.EndDrawing();
-        }
-
-        private void CreateAsteroid(int size)
-        {
-            Vector2 position = GetRandomSpawnPosition();
-            Vector2 direction = GetDirectionToCenter(position);
-            float speed = 50 + (float)random.NextDouble() * 50;
-            Vector2 velocity = direction * speed;
-            float rotationSpeed = (float)(random.NextDouble() * 200 - 100);
-
-            asteroids.Add(new Asteroid(position, velocity, size, rotationSpeed));
-        }
-
-        // طريقة مبسطة لاختيار موقع عشوائي للظهور
-        private Vector2 GetRandomSpawnPosition()
-        {
-            // اختيار جانب عشوائي من الشاشة (أعلى، يمين، أسفل، يسار)
-            int side = random.Next(4);
-
-            Vector2 spawnPosition;
-
-            if (side == 0) // أعلى الشاشة
-            {
-                spawnPosition = new Vector2(random.Next(SCREEN_WIDTH), -50);
-            }
-            else if (side == 1) // يمين الشاشة
-            {
-                spawnPosition = new Vector2(SCREEN_WIDTH + 50, random.Next(SCREEN_HEIGHT));
-            }
-            else if (side == 2) // أسفل الشاشة
-            {
-                spawnPosition = new Vector2(random.Next(SCREEN_WIDTH), SCREEN_HEIGHT + 50);
-            }
-            else // يسار الشاشة
-            {
-                spawnPosition = new Vector2(-50, random.Next(SCREEN_HEIGHT));
-            }
-
-            return spawnPosition;
-        }
-
-        // طريقة مبسطة لحساب الاتجاه نحو وسط الشاشة
-        private Vector2 GetDirectionToCenter(Vector2 fromPosition)
-        {
-            // حساب الفرق بين الموقع الحالي ووسط الشاشة
-            Vector2 direction = ScreenCenter - fromPosition;
-
-            // تطبيع الاتجاه (جعل طوله = 1) باستخدام دالة جاهزة
-            return Vector2.Normalize(direction);
-        }
-
-        // طريقة مبسطة لتقسيم الكويكبات - بدون استخدام Sin/Cos معقد
-        private void SplitAsteroid(Asteroid asteroid)
-        {
-            score += asteroid.GetSize() * 100;
-
-            // Play explosion sound
-            if (Raylib.IsSoundValid(ExplosionSound))
-                Raylib.PlaySound(ExplosionSound);
-
-            // فقط الكويكبات الكبيرة (حجم 2) تنقسم إلى صغيرة (حجم 1)
-            if (asteroid.GetSize() == 2)
-            {
-                // إنشاء كويكبين صغيرين بطريقة مبسطة
-                Vector2 currentPos = asteroid.GetPosition();
-
-                // الكويكب الأول: يتحرك يميناً وأعلى
-                Vector2 direction1 = new Vector2(1, -0.5f); // يمين + قليل أعلى
-                direction1 = Vector2.Normalize(direction1);
-                Vector2 velocity1 = direction1 * (70 + (float)random.NextDouble() * 30);
-
-                // الكويكب الثاني: يتحرك يساراً وأسفل
-                Vector2 direction2 = new Vector2(-1, 0.5f); // يسار + قليل أسفل
-                direction2 = Vector2.Normalize(direction2);
-                Vector2 velocity2 = direction2 * (70 + (float)random.NextDouble() * 30);
-
-                // سرعة دوران عشوائية
-                float rotationSpeed1 = (float)(random.NextDouble() * 200 - 100);
-                float rotationSpeed2 = (float)(random.NextDouble() * 200 - 100);
-
-                asteroids.Add(new Asteroid(currentPos, velocity1, 1, rotationSpeed1));
-                asteroids.Add(new Asteroid(currentPos, velocity2, 1, rotationSpeed2));
-            }
-
-            asteroid.Destroy();
-        }
-
-        private void CreateEnemy()
-        {
-            Vector2 position = GetRandomSpawnPosition();
-            enemies.Add(new Enemy(position));
-        }
-
-        private void UpdateEnemies(float deltaTime)
-        {
-            // Update enemy spawn timer
-            enemySpawnTimer += deltaTime;
-
-            // Spawn enemy every 15 seconds
-            if (enemySpawnTimer >= ENEMY_SPAWN_INTERVAL)
-            {
-                CreateEnemy();
-                enemySpawnTimer = 0f; // Reset timer
-                Console.WriteLine("Enemy spawned!");
-            }
-
-            // Update existing enemies
-            for (int i = enemies.Count - 1; i >= 0; i--)
-            {
-                enemies[i].Update(deltaTime, player.GetPosition());
-
-                if (!enemies[i].IsActive)
-                {
-                    enemies.RemoveAt(i);
-                }
-            }
-        }
-
-        private void CheckBulletEnemyCollisions()
-        {
-            List<Bullet> bullets = player.GetBullets();
-
-            for (int i = bullets.Count - 1; i >= 0; i--)
-            {
-                for (int j = enemies.Count - 1; j >= 0; j--)
-                {
-                    // Using Raylib.CheckCollisionCircles instead of manual distance calculation
-                    if (Raylib.CheckCollisionCircles(bullets[i].GetPosition(), BULLET_RADIUS,
-                                                   enemies[j].GetPosition(), enemies[j].GetRadius()))
-                    {
-                        score += 500; // Enemy is worth more points
-
-                        // Play explosion sound
-                        if (Raylib.IsSoundValid(ExplosionSound))
-                            Raylib.PlaySound(ExplosionSound);
-
-                        enemies[j].Destroy();
-                        bullets[i].Destroy();
-                        break;
-                    }
-                }
-            }
-        }
-
-        private void CheckPlayerEnemyCollisions()
-        {
-            Vector2 playerPos = player.GetPosition();
-
-            foreach (var enemy in enemies)
-            {
-                if (Raylib.CheckCollisionCircles(playerPos, PLAYER_RADIUS, enemy.GetPosition(), enemy.GetRadius()))
-                {
-                    PlayerHit();
-                    return;
-                }
-            }
-        }
-
-        private void CheckEnemyBulletPlayerCollisions()
-        {
-            Vector2 playerPos = player.GetPosition();
-
-            foreach (var enemy in enemies)
-            {
-                var enemyBullets = enemy.GetBullets();
-                for (int i = enemyBullets.Count - 1; i >= 0; i--)
-                {
-                    // Using consistent collision detection
-                    if (Raylib.CheckCollisionCircles(playerPos, PLAYER_RADIUS,
-                                                   enemyBullets[i].GetPosition(), BULLET_RADIUS))
-                    {
-                        enemyBullets[i].Destroy();
-                        PlayerHit();
-                        return;
-                    }
-                }
-            }
         }
 
         private void PlayerHit()
         {
             playerLives--;
-            Console.WriteLine($"Player hit! Lives remaining: {playerLives}");
 
-            // If no lives left, restart the game immediately
             if (playerLives <= 0)
             {
-                Console.WriteLine($"Game Over! Final Score: {score}");
-                InitializeGame(); // Restart immediately without any menu
+                // Check for high score and restart immediately
+                if (HighScoreManager.IsHighScore(score))
+                {
+                    HighScoreManager.AddScore(score);
+                }
+
+                InitializeGame();
                 return;
             }
 
-            // Only reset player position if still has lives
-            player = new Ship(ScreenCenter);
-        }
-
-        private void CheckBulletAsteroidCollisions()
-        {
-            List<Bullet> bullets = player.GetBullets();
-
-            for (int i = bullets.Count - 1; i >= 0; i--)
-            {
-                for (int j = asteroids.Count - 1; j >= 0; j--)
-                {
-                    // Using Raylib.CheckCollisionCircles consistently
-                    if (Raylib.CheckCollisionCircles(bullets[i].GetPosition(), BULLET_RADIUS,
-                                                   asteroids[j].GetPosition(), asteroids[j].GetRadius()))
-                    {
-                        SplitAsteroid(asteroids[j]);
-                        bullets[i].Destroy();
-                        break;
-                    }
-                }
-            }
-        }
-
-        private void CleanupResources()
-        {
-            Console.WriteLine("Cleaning up resources...");
-
-            // Unload all assets using centralized system
-            UnloadAssets();
-
-            Raylib.CloseAudioDevice();
-            Raylib.CloseWindow();
-        }
-
-        // PUBLIC ACCESSORS FOR OTHER CLASSES
-        public static Texture2D GetPlayerTexture() => PlayerShipTexture;
-
-        public static Texture2D GetAsteroidTexture(int size)
-        {
-            return size switch
-            {
-                2 => ASTEROID_BROWNTexture,
-                1 => ASTEROID_GREYTexture,
-                _ => ASTEROID_BROWNTexture
-            };
-        }
-
-        public static Texture2D GetUfoTexture() => UFOShipTexture;
-        public static Sound GetLaserSound() => shootSound;
-        public static Sound GetExplosionSound() => ExplosionSound;
-        public static Music GetBackgroundMusic() => BackgroundMusic;
-
-        public static float GetPlayerRadius() => PLAYER_RADIUS;
-        public static int GetScreenWidth() => SCREEN_WIDTH;
-        public static int GetScreenHeight() => SCREEN_HEIGHT;
-        public static Vector2 GetScreenCenter() => ScreenCenter;
-
-        // دوال مساعدة مبسطة لأي استخدام مستقبلي
-        public static Vector2 CreateDirectionFromAngle(float angleDegrees)
-        {
-            // تحويل الزاوية من درجات إلى راديان
-            float angleRadians = angleDegrees * MathF.PI / 180f;
-
-            // إنشاء اتجاه باستخدام الدوال المثلثية البسيطة
-            return new Vector2(MathF.Cos(angleRadians), MathF.Sin(angleRadians));
-        }
-
-        public static float GetAngleBetweenPoints(Vector2 from, Vector2 to)
-        {
-            Vector2 direction = to - from;
-            float angleRadians = MathF.Atan2(direction.Y, direction.X);
-            float angleDegrees = angleRadians * 180f / MathF.PI;
-
-            // التأكد من أن الزاوية بين 0 و 360
-            if (angleDegrees < 0) angleDegrees += 360;
-
-            return angleDegrees;
+            player = new Ship(new Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2), ShipTexture, soundSystem);
         }
     }
 }

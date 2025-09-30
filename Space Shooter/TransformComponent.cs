@@ -3,22 +3,25 @@ using Raylib_cs;
 
 namespace Space_Shooter
 {
+    public enum AsteroidSize
+    {
+        Small = 0,
+        Medium = 1,
+        Large = 2
+    }
+
     internal class TransformComponent
     {
-
         public Vector2 position;
         public Vector2 velocity;
         public float rotation;
         public float rotationSpeed;
 
-        // Add angle property for compatibility
-        public float angle;
-     
-        public TransformComponent(Vector2 startPos, Vector2 startVel = default, float startRot = 0, float rotSpeed = 0)
+        public TransformComponent(Vector2 pos, Vector2 vel = default, float rot = 0, float rotSpeed = 0)
         {
-            position = startPos;
-            velocity = startVel;
-            rotation = startRot;
+            position = pos;
+            velocity = vel;
+            rotation = rot;
             rotationSpeed = rotSpeed;
         }
 
@@ -26,26 +29,21 @@ namespace Space_Shooter
         {
             position += velocity * deltaTime;
             rotation += rotationSpeed * deltaTime;
+            WrapAroundScreen();
         }
 
-        public void WrapAroundScreen(int screenWidth, int screenHeight)
+        private void WrapAroundScreen()
         {
-            if (position.X < 0) position.X = screenWidth;
-            else if (position.X > screenWidth) position.X = 0;
-
-            if (position.Y < 0) position.Y = screenHeight;
-            else if (position.Y > screenHeight) position.Y = 0;
+            if (position.X < 0) position.X += AsteroidsGame.SCREEN_WIDTH;
+            if (position.X > AsteroidsGame.SCREEN_WIDTH) position.X -= AsteroidsGame.SCREEN_WIDTH;
+            if (position.Y < 0) position.Y += AsteroidsGame.SCREEN_HEIGHT;
+            if (position.Y > AsteroidsGame.SCREEN_HEIGHT) position.Y -= AsteroidsGame.SCREEN_HEIGHT;
         }
 
         public Vector2 GetDirectionVector()
         {
-            float radians = rotation * (MathF.PI / 180.0f);
-            return new Vector2(MathF.Sin(radians), -MathF.Cos(radians));
+            float rad = (rotation - 90) * Raylib.DEG2RAD;
+            return new Vector2(MathF.Cos(rad), MathF.Sin(rad));
         }
     }
-
-   
 }
-
-
-

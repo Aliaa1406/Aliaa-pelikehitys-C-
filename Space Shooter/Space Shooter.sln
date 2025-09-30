@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Space Shooter", "Space Shooter.csproj", "{441E9CBF-C56C-4FE7-BDC8-082CC6329B06}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RayGuiCreator", "..\RayGuiCreator\RayGuiCreator\RayGuiCreator.csproj", "{2C30B301-BA1F-EF9F-FA3F-A31E427A0BEB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{441E9CBF-C56C-4FE7-BDC8-082CC6329B06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{441E9CBF-C56C-4FE7-BDC8-082CC6329B06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{441E9CBF-C56C-4FE7-BDC8-082CC6329B06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C30B301-BA1F-EF9F-FA3F-A31E427A0BEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C30B301-BA1F-EF9F-FA3F-A31E427A0BEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C30B301-BA1F-EF9F-FA3F-A31E427A0BEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C30B301-BA1F-EF9F-FA3F-A31E427A0BEB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
